@@ -48,15 +48,14 @@ int randomInt(){
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_setup() {
-  char line[buffersize];
   //create well known pipe
   if (mkfifo(WKP, 0666) == -1){
     err();
   } 
   printf("created WKP\n");
-  //wait for connection
+  //wait for connection and open WKP
   int from_client = open(WKP, O_RDWR, 0666);
-  //
+  //remove WKP
   remove(WKP);
   return from_client;
 }
@@ -86,7 +85,17 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-  int from_server;
+  //create private pipe
+  char pid[buffersize];
+  sprintf(pid, "%d", getpid());
+  if (mkfifo(pid, 0666) == -1){
+    err();
+  } 
+  //connect to WKP and send pid
+  int from_server = open(WKP, O_RDWR, 0666);
+  write(WKP, pid, buffersize + 1);
+  //open private pipe
+  open (pid, O_RDWR, 0666);
   return from_server;
 }
 
