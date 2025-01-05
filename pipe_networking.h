@@ -21,9 +21,6 @@
 #define MESSAGE 3
 #define EXIT 4
 
-int err();
-int randomInt();
-
 int server_handshake(int *to_client);
 int client_handshake(int *to_server);
 
@@ -36,5 +33,8 @@ int server_setup();
 //multi_server
 int multi_server_setup();
 int multi_server_connect(int from_client, struct message m);
+
+int err();
+int randomInt();
 
 #endif
