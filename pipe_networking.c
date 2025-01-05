@@ -105,7 +105,7 @@ int client_handshake(int *to_server) {
   if (read(from_server, &buffer, sizeof(buffer)) == -1){
     err();
   }
-  //reomve PP
+  //remove PP
   if (remove(PP) == -1){
     err();
   }
@@ -128,7 +128,12 @@ int client_handshake(int *to_server) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int server_connect(int from_client) {
-  int to_client  = 0;
+  char buffer[buffersize];
+  if (read(from_client, buffer, sizeof(buffer)) == -1){
+    err();
+  }
+  printf("(SERVER) Received pipe name %s from WKP\n", buffer);
+  int to_client = open(buffer, O_RDWR, 0644);
   return to_client;
 }
 
