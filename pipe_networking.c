@@ -3,14 +3,16 @@
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <string.h>
 #include <strings.h>
+#include <time.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include "pipe_networking.h"
-//it is useful to add these definitions to make your code more readible
+
 #define READ 0
 #define WRITE 1
 #define buffersize 200
