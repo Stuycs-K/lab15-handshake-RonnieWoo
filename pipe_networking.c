@@ -81,16 +81,40 @@ int server_handshake(int *to_client) {
   =========================*/
 int client_handshake(int *to_server) {
   //create private pipe
-  char pid[buffersize];
-  sprintf(pid, "%d", getpid());
-  if (mkfifo(pid, 0666) == -1){
+  printf("(CLIENT) Creating private pipe\n");
+  char PP[buffersize];
+  sprintf(PP, "%d", getpid());
+  char *fifo_extension = ".fifo";
+  strcat(PP, fifo_extension);
+  if (mkfifo(PP, 0666) == -1){
     err();
   } 
-  //connect to WKP and send pid
-  int from_server = open(WKP, O_RDWR, 0666);
-  write(WKP, pid, buffersize + 1);
-  //open private pipe
-  open (pid, O_RDWR, 0666);
+  //connect to WKP and send PP
+  printf("(CLIENT) Sending %s to WKP\n", PP);
+  *to_server = open(WKP, O_WRONLY, 0644);
+  if (write(*to_server, PP, strlen(PP)) == -1){
+    err();
+  }
+  //read from PP
+  int from_server = open(PP, O_RDWR, 0644);
+  if (from_server == -1){
+    err();
+  }
+  //read from WKP
+  int buffer;
+  if (read(from_server, &buffer, sizeof(buffer)) == -1){
+    err();
+  }
+  //reomve PP
+  if (remove(PP) == -1){
+    err();
+  }
+  buffer++;
+  //send ACK TO server
+  printf("Sending number %d to server\n", buffer);
+  if (write(*to_server, &buffer, sizeof(buffer) == -1)){
+    err();
+  }
   return from_server;
 }
 
