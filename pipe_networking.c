@@ -54,17 +54,17 @@ int server_handshake(int *to_client) {
   int from_client = server_setup();
   *to_client = server_connect(from_client);
   //send a random int (SYN_ACK)
-  int SYN_ACK = randomInt();
-  if (write(*to_client, &SYN_ACK, sizeof(SYN_ACK)) == -1){
+  int random = randomInt();
+  if (write(*to_client, &random, sizeof(random)) == -1){
     err();
   }
-  printf("(SERVER) Sent number %d to client\n", SYN_ACK);
+  printf("(SERVER) Sent number %d to client\n", random);
   //receive the random int incremented by 1 (ACK)
-  int ACK = -1;
-  if (read(from_client, &ACK, sizeof(ACK)) == -1){
+  int incrementedRandom = -1;
+  if (read(from_client, &incrementedRandom, sizeof(incrementedRandom)) == -1){
     err();
   }
-  printf("(SERVER) Received number %d from client\n", ACK);
+  printf("(SERVER) Received number %d from client\n", incrementedRandom);
   *to_client = server_connect(from_client);
   return from_client;
 }
