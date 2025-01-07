@@ -32,7 +32,7 @@ int server_setup() {
   if (mkfifo(WKP, 0666) == -1){
     err();
   } 
-  printf("(SETUP) Created WKP\n");
+  printf("(SERVER) Created WKP\n");
   //wait for connection and open WKP
   int from_client = open(WKP, O_RDONLY, 0644);
   if (from_client == -1){
@@ -83,7 +83,7 @@ int server_handshake(int *to_client) {
   =========================*/
 int client_handshake(int *to_server) {
   //create private pipe
-  char PP[buffersize];
+  char PP[buffersize] = {"\0"};
   sprintf(PP, "%d", getpid());
   char *fifo_extension = ".fifo";
   strcat(PP, fifo_extension);
@@ -92,7 +92,6 @@ int client_handshake(int *to_server) {
   } 
   printf("(CLIENT) Created private pipe\n");
   //connect to WKP and send PP
-  printf("(CLIENT) Sending %s to WKP\n", PP);
   *to_server = -1;
   while (*to_server == -1){
     *to_server = open(WKP, O_WRONLY, 0666);
@@ -100,8 +99,9 @@ int client_handshake(int *to_server) {
   if (write(*to_server, PP, strlen(PP)) == -1){
     err();
   }
+  printf("(CLIENT) Sent pipe name %s to WKP\n", PP);
   //read from PP
-  int from_server = open(PP, O_RDWR, 0644);
+  int from_server = open(PP, O_RDONLY, 0666);
   if (from_server == -1){
     err();
   }
@@ -110,16 +110,18 @@ int client_handshake(int *to_server) {
   if (read(from_server, &buffer, sizeof(buffer)) == -1){
     err();
   }
+  printf("(CLIENT) Received number %d to server\n", buffer);
   //remove PP
   if (remove(PP) == -1){
     err();
   }
+  //increment received int
   buffer++;
   //send ACK TO server
-  printf("Sending number %d to server\n", buffer);
-  if (write(*to_server, &buffer, sizeof(buffer) == -1)){
+  if (write(*to_server, &buffer, sizeof(buffer)) == -1){
     err();
   }
+  printf("(CLIENT) Sent number %d to server\n", buffer);
   return from_server;
 }
 
@@ -133,12 +135,12 @@ int client_handshake(int *to_server) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int server_connect(int from_client) {
-  char buffer[buffersize];
+  char buffer[buffersize] = {"\0"};
   if (read(from_client, buffer, sizeof(buffer)) == -1){
     err();
   }
   printf("(SERVER) Received pipe name %s from WKP\n", buffer);
-  int to_client = open(buffer, O_RDWR, 0644);
+  int to_client = open(buffer, O_WRONLY, 0666);
   return to_client;
 }
 
