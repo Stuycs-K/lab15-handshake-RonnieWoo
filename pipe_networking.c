@@ -34,7 +34,10 @@ int server_setup() {
   } 
   printf("(SETUP) Created WKP\n");
   //wait for connection and open WKP
-  int from_client = open(WKP, O_RDWR, 0644);
+  int from_client = open(WKP, O_RDONLY, 0644);
+  if (from_client == -1){
+    err();
+  }
   //remove WKP
   remove(WKP);
   return from_client;
@@ -65,7 +68,6 @@ int server_handshake(int *to_client) {
     err();
   }
   printf("(SERVER) Received number %d from client\n", incrementedRandom);
-  *to_client = server_connect(from_client);
   return from_client;
 }
 
@@ -81,7 +83,6 @@ int server_handshake(int *to_client) {
   =========================*/
 int client_handshake(int *to_server) {
   //create private pipe
-  printf("(CLIENT) Creating private pipe\n");
   char PP[buffersize];
   sprintf(PP, "%d", getpid());
   char *fifo_extension = ".fifo";
@@ -89,9 +90,13 @@ int client_handshake(int *to_server) {
   if (mkfifo(PP, 0666) == -1){
     err();
   } 
+  printf("(CLIENT) Created private pipe\n");
   //connect to WKP and send PP
   printf("(CLIENT) Sending %s to WKP\n", PP);
-  *to_server = open(WKP, O_WRONLY, 0644);
+  *to_server = -1;
+  while (*to_server == -1){
+    *to_server = open(WKP, O_WRONLY, 0666);
+  }
   if (write(*to_server, PP, strlen(PP)) == -1){
     err();
   }
