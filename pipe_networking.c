@@ -13,10 +13,6 @@
 #include <errno.h>
 #include "pipe_networking.h"
 
-#define READ 0
-#define WRITE 1
-#define buffersize 200
-
 //UPSTREAM = to the server / from the client
 //DOWNSTREAM = to the client / from the server
 /*=========================
@@ -83,7 +79,7 @@ int server_handshake(int *to_client) {
   =========================*/
 int client_handshake(int *to_server) {
   //create private pipe
-  char PP[buffersize] = {"\0"};
+  char PP[BUFFER_SIZE] = {"\0"};
   sprintf(PP, "%d", getpid());
   char *fifo_extension = ".fifo";
   strcat(PP, fifo_extension);
@@ -135,7 +131,7 @@ int client_handshake(int *to_server) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int server_connect(int from_client) {
-  char buffer[buffersize] = {"\0"};
+  char buffer[BUFFER_SIZE] = {"\0"};
   if (read(from_client, buffer, sizeof(buffer)) == -1){
     err();
   }
