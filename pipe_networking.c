@@ -1,20 +1,20 @@
+#include "pipe_networking.h"
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <string.h>
 #include <strings.h>
-#include <time.h>
-#include <sys/wait.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include "pipe_networking.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
 
-//UPSTREAM = to the server / from the client
-//DOWNSTREAM = to the client / from the server
+// UPSTREAM = to the server / from the client
+// DOWNSTREAM = to the client / from the server
 /*=========================
   server_setup
 
@@ -24,49 +24,49 @@
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_setup() {
-  //create well known pipe
-  if (mkfifo(WKP, 0666) == -1){
-    err();
-  } 
-  printf("(SERVER) Created WKP\n");
-  //wait for connection and open WKP
-  int from_client = open(WKP, O_RDONLY, 0644);
-  if (from_client == -1){
+  // create well known pipe
+  if (mkfifo(WKP, 0666) == -1) {
     err();
   }
-  //remove WKP
+  printf("(SERVER) Created WKP\n");
+  // wait for connection and open WKP
+  int from_client = open(WKP, O_RDONLY, 0644);
+  if (from_client == -1) {
+    err();
+  }
+  // remove WKP
   remove(WKP);
   return from_client;
 }
 
 /*=========================
-  server_handshake 
+  server_handshake
   args: int * to_client
 
   Performs the server side pipe 3 way handshake.
-  Sets *to_client to the file descriptor to the downstream pipe (Client's private pipe).
+  Sets *to_client to the file descriptor to the downstream pipe (Client's
+  private pipe).
 
   returns the file descriptor for the upstream pipe (see server setup).
   =========================*/
 int server_handshake(int *to_client) {
-  //create private pipe
+  // create private pipe
   int from_client = server_setup();
   *to_client = server_connect(from_client);
-  //send a random int (SYN_ACK)
+  // send a random int (SYN_ACK)
   int random = randomInt();
-  if (write(*to_client, &random, sizeof(random)) == -1){
+  if (write(*to_client, &random, sizeof(random)) == -1) {
     err();
   }
   printf("(SERVER) Sent number %d to client\n", random);
-  //receive the random int incremented by 1 (ACK)
+  // receive the random int incremented by 1 (ACK)
   int incrementedRandom = -1;
-  if (read(from_client, &incrementedRandom, sizeof(incrementedRandom)) == -1){
+  if (read(from_client, &incrementedRandom, sizeof(incrementedRandom)) == -1) {
     err();
   }
   printf("(SERVER) Received number %d from client\n", incrementedRandom);
   return from_client;
 }
-
 
 /*=========================
   client_handshake
@@ -78,49 +78,48 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-  //create private pipe
+  // create private pipe
   char PP[BUFFER_SIZE] = {"\0"};
   sprintf(PP, "%d", getpid());
   char *fifo_extension = ".fifo";
   strcat(PP, fifo_extension);
-  if (mkfifo(PP, 0666) == -1){
+  if (mkfifo(PP, 0666) == -1) {
     err();
-  } 
+  }
   printf("(CLIENT) Created private pipe\n");
-  //connect to WKP and send PP
+  // connect to WKP and send PP
   *to_server = -1;
-  while (*to_server == -1){
+  while (*to_server == -1) {
     *to_server = open(WKP, O_WRONLY, 0666);
   }
-  if (write(*to_server, PP, strlen(PP)) == -1){
+  if (write(*to_server, PP, strlen(PP)) == -1) {
     err();
   }
   printf("(CLIENT) Sent pipe name %s to WKP\n", PP);
-  //read from PP
+  // read from PP
   int from_server = open(PP, O_RDONLY, 0666);
-  if (from_server == -1){
+  if (from_server == -1) {
     err();
   }
-  //read from WKP
+  // read from WKP
   int buffer;
-  if (read(from_server, &buffer, sizeof(buffer)) == -1){
+  if (read(from_server, &buffer, sizeof(buffer)) == -1) {
     err();
   }
   printf("(CLIENT) Received number %d to server\n", buffer);
-  //remove PP
-  if (remove(PP) == -1){
+  // remove PP
+  if (remove(PP) == -1) {
     err();
   }
-  //increment received int
+  // increment received int
   buffer++;
-  //send ACK TO server
-  if (write(*to_server, &buffer, sizeof(buffer)) == -1){
+  // send ACK TO server
+  if (write(*to_server, &buffer, sizeof(buffer)) == -1) {
     err();
   }
   printf("(CLIENT) Sent number %d to server\n", buffer);
   return from_server;
 }
-
 
 /*=========================
   server_connect
@@ -132,7 +131,7 @@ int client_handshake(int *to_server) {
   =========================*/
 int server_connect(int from_client) {
   char buffer[BUFFER_SIZE] = {"\0"};
-  if (read(from_client, buffer, sizeof(buffer)) == -1){
+  if (read(from_client, buffer, sizeof(buffer)) == -1) {
     err();
   }
   printf("(SERVER) Received pipe name %s from WKP\n", buffer);
@@ -140,24 +139,24 @@ int server_connect(int from_client) {
   return to_client;
 }
 
-int err(){
-    printf("errno %d\n",errno);
-    printf("%s\n",strerror(errno));
-    exit(1);
+int err() {
+  printf("errno %d\n", errno);
+  printf("%s\n", strerror(errno));
+  exit(1);
 }
 
-int randomInt(){
+int randomInt() {
   int file = open("/dev/random", O_RDONLY, 0);
-  if(file == -1){
+  if (file == -1) {
     err();
   }
   int p;
   int result = read(file, &p, 4);
-  if (result == -1){
+  if (result == -1) {
     err();
   }
-  //change negatives to positives
-  if (p < 0){
+  // change negatives to positives
+  if (p < 0) {
     p *= -1;
   }
   return p;
