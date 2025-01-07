@@ -15,6 +15,7 @@ void siginthandler(int sig) {
   unlink(PP);
   exit(0);
 }
+
 int main() {
   signal(SIGINT, siginthandler);
   from_server = client_handshake(&to_server);
